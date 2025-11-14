@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+# bash completion for pvm (Pod Version Manager)
+
+_pvm_completion() {
+  local cur prev opts
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  
+  # Main commands
+  local commands="install use ls ls-remote uninstall current alias unalias which help --help"
+  
+  # If we're completing the first argument (command)
+  if [ ${COMP_CWORD} -eq 1 ]; then
+    COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
+    return 0
+  fi
+  
+  # Get the command (first argument)
+  local command="${COMP_WORDS[1]}"
+  
+  case "${command}" in
+    use|uninstall|which)
+      # Complete with installed versions and aliases
+      local versions=""
+      local pvm_dir="${PVM_DIR:-${HOME}/.pvm}"
+      local version_dir="${pvm_dir}/versions/cocoapods"
+      local alias_dir="${pvm_dir}/alias"
+      
+      # Add installed versions
+      if [ -d "${version_dir}" ]; then
+        versions=$(ls -1 "${version_dir}" 2>/dev/null)
+      fi
+      
+      # Add aliases
+      if [ -d "${alias_dir}" ]; then
+        local aliases=$(ls -1 "${alias_dir}" 2>/dev/null)
+        versions="${versions} ${aliases}"
+      fi
+      
+      COMPREPLY=( $(compgen -W "${versions}" -- ${cur}) )
+      return 0
+      ;;
+    install)
+      # Complete with 'latest' and common versions
+      COMPREPLY=( $(compgen -W "latest" -- ${cur}) )
+      return 0
+      ;;
+    alias)
+      # For alias command, if completing the third argument (version)
+      if [ ${COMP_CWORD} -eq 3 ]; then
+        local versions=""
+        local pvm_dir="${PVM_DIR:-${HOME}/.pvm}"
+        local version_dir="${pvm_dir}/versions/cocoapods"
+        
+        if [ -d "${version_dir}" ]; then
+          versions=$(ls -1 "${version_dir}" 2>/dev/null)
+        fi
+        
+        COMPREPLY=( $(compgen -W "${versions}" -- ${cur}) )
+      fi
+      return 0
+      ;;
+    unalias)
+      # Complete with existing aliases
+      local pvm_dir="${PVM_DIR:-${HOME}/.pvm}"
+      local alias_dir="${pvm_dir}/alias"
+      
+      if [ -d "${alias_dir}" ]; then
+        local aliases=$(ls -1 "${alias_dir}" 2>/dev/null)
+        COMPREPLY=( $(compgen -W "${aliases}" -- ${cur}) )
+      fi
+      return 0
+      ;;
+  esac
+}
+
+complete -F _pvm_completion pvm
