@@ -237,7 +237,7 @@ pod --version
 如果 pvm 有新版本发布，您可以通过重新运行安装脚本来更新：
 
 ```bash
-curl -o- https://github.com/mohuwamg/pvm/master/install.sh | bash
+curl -o- https://github.com/mohuwamg/pvm/main/install.sh | bash
 ```
 
 ### 如何完全卸载 pvm？

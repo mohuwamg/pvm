@@ -8,10 +8,10 @@
 
 ```bash
 # 使用 curl
-curl -o- https://raw.githubusercontent.com/mohuwamg/pvm/master/install.sh | bash
+curl -o- https://raw.githubusercontent.com/mohuwamg/pvm/main/install.sh | bash
 
 # 使用 wget
-wget -qO- https://raw.githubusercontent.com/ymohuwamg/pvm/master/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/ymohuwamg/pvm/main/install.sh | bash
 ```
 
 这将把 `pvm` 仓库克隆到 `~/.pvm`，并将必要的 source 行添加到您的 shell 配置文件（`~/.bashrc`、`~/.zshrc` 或 `~/.profile`）中。

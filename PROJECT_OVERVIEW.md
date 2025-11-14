@@ -150,7 +150,7 @@ pvm 提供两种安装方式：
 **通过安装脚本**：使用 curl 或 wget 下载并运行安装脚本，自动完成安装和配置。
 
 ```bash
-curl -o- https://github.com/mohuwamg/pvm/master/install.sh | bash
+curl -o- https://github.com/mohuwamg/pvm/main/install.sh | bash
 ```
 
 **手动安装**：克隆 pvm 仓库到本地，然后在 shell 配置文件中添加 source 命令。

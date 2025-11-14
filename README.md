@@ -8,10 +8,10 @@ To install or update `pvm`, you can use the `install.sh` script:
 
 ```bash
 # using curl
-curl -o- https://raw.githubusercontent.com/mohuwamg/pvm/master/install.sh | bash
+curl -o- https://raw.githubusercontent.com/mohuwamg/pvm/main/install.sh | bash
 
 # using wget
-wget -qO- https://raw.githubusercontent.com/mohuwamg/pvm/master/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/mohuwamg/pvm/main/install.sh | bash
 ```
 
 This will clone the `pvm` repository to `~/.pvm` and add the necessary source lines to your shell profile (`~/.bashrc`, `~/.zshrc`, or `~/.profile`).

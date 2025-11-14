@@ -22,13 +22,13 @@ gem --version
 使用以下命令安装 pvm：
 
 ```bash
-curl -o- https://raw.githubusercontent.com/mohuwamg/pvm/master/install.sh | bash
+curl -o- https://raw.githubusercontent.com/mohuwamg/pvm/main/install.sh | bash
 ```
 
 或使用 wget：
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/mohuwamg/pvm/master/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/mohuwamg/pvm/main/install.sh | bash
 ```
 
 安装完成后，重新加载 shell 配置：
