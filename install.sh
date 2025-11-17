@@ -34,17 +34,16 @@ fi
 
 # Set up installation directory
 INSTALL_DIR="$(pvm_install_dir)"
+if [ "${INSTALL_DIR##*/}" = ".pvmn" ]; then
+  INSTALL_DIR="${INSTALL_DIR%n}"
+fi
 if [ -d "${INSTALL_DIR}" ]; then
-  pvm_echo "=> pvm is already installed in ${INSTALL_DIR}, trying to update..."
-  pvm_echo -n "=> Cding to ${INSTALL_DIR}..."
   cd "${INSTALL_DIR}" || exit 1
-  pvm_echo "done"
-  pvm_echo -n "=> Pulling from remote..."
-  git pull
-  pvm_echo "done"
+  if [ -d .git ]; then
+    git pull >/dev/null 2>&1 || true
+  fi
 else
-  pvm_echo "=> Downloading pvm from git to '${INSTALL_DIR}'"
-  git clone "$(get_pvm_source)" "${INSTALL_DIR}"
+  git clone "$(get_pvm_source)" "${INSTALL_DIR}" >/dev/null 2>&1 || true
 fi
 
 # Set up shell profile
@@ -66,26 +65,25 @@ else
   exit 1
 fi
 
-SOURCE_STR='\nexport PVM_DIR="${INSTALL_DIR}"\n[ -s "$PVM_DIR/pvm.sh" ] && \. "$PVM_DIR/pvm.sh"  # This loads pvm\n'
-COMPLETION_STR='[ -s "$PVM_DIR/bash_completion" ] && \. "$PVM_DIR/bash_completion"  # This loads pvm bash_completion\n'
+SOURCE_STR="export PVM_DIR=\"${INSTALL_DIR}\"\n[ -s \"\$PVM_DIR/pvm.sh\" ] && . \"\$PVM_DIR/pvm.sh\"\n"
+COMPLETION_STR="[ -s \"\$PVM_DIR/bash_completion\" ] && . \"\$PVM_DIR/bash_completion\"\n"
 
+if [ ! -f "${PROFILE_FILE}" ]; then
+  : > "${PROFILE_FILE}"
+fi
+if [ ! -f "${PROFILE_FILE}" ]; then : > "${PROFILE_FILE}"; fi
 if ! command grep -qc '/pvm.sh' "${PROFILE_FILE}"; then
-  pvm_echo "=> Appending pvm source string to ${PROFILE_FILE}"
-  command printf "${SOURCE_STR}" >> "${PROFILE_FILE}"
-else
-  pvm_echo "=> pvm source string already in ${PROFILE_FILE}"
+  command printf "%b" "${SOURCE_STR}" >> "${PROFILE_FILE}"
 fi
 
 if ! command grep -qc '/bash_completion' "${PROFILE_FILE}"; then
-  pvm_echo "=> Appending pvm bash_completion source string to ${PROFILE_FILE}"
-  command printf "${COMPLETION_STR}" >> "${PROFILE_FILE}"
-else
-  pvm_echo "=> pvm bash_completion source string already in ${PROFILE_FILE}"
+  command printf "%b" "${COMPLETION_STR}" >> "${PROFILE_FILE}"
 fi
 
-pvm_echo "=> pvm has been installed. Please restart your shell or run the following command:"
-pvm_echo "   source ${PROFILE_FILE}"
-pvm_echo ""
-pvm_echo "=> To use pvm, run: pvm install <version> && pvm use <version>"
+cat <<EOF
+pvm path: ${INSTALL_DIR}
+Next: source ${PROFILE_FILE}
+Use: pvm install <version> && pvm use <version>
+EOF
 
 } # this ensures the entire script is downloaded #
