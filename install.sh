@@ -10,10 +10,10 @@ pvm_echo() {
   command printf %s\n "$*" 2>/dev/null
 }
 
-get_pvm_source() {
-  local PVM_SOURCE_URL
-  PVM_SOURCE_URL="https://github.com/mohuwamg/pvm.git" # Placeholder URL
-  pvm_echo "${PVM_SOURCE_URL}"
+pvm_source_local() {
+  local DIR
+  DIR="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)"
+  pvm_echo "${DIR}"
 }
 
 pvm_install_dir() {
@@ -26,24 +26,15 @@ pvm_install_dir() {
   fi
 }
 
-# Check for git
-if ! pvm_has "git"; then
-  pvm_echo >&2 "pvm installation requires git."
-  exit 1
-fi
-
 # Set up installation directory
 INSTALL_DIR="$(pvm_install_dir)"
 if [ "${INSTALL_DIR##*/}" = ".pvmn" ]; then
   INSTALL_DIR="${INSTALL_DIR%n}"
 fi
-if [ -d "${INSTALL_DIR}" ]; then
-  cd "${INSTALL_DIR}" || exit 1
-  if [ -d .git ]; then
-    git pull >/dev/null 2>&1 || true
-  fi
-else
-  git clone "$(get_pvm_source)" "${INSTALL_DIR}" >/dev/null 2>&1 || true
+mkdir -p "${INSTALL_DIR}"
+cp -f "./pvm.sh" "${INSTALL_DIR}/pvm.sh" 2>/dev/null || true
+if [ -f "./bash_completion" ]; then
+  cp -f "./bash_completion" "${INSTALL_DIR}/bash_completion"
 fi
 
 # Set up shell profile
