@@ -11,7 +11,7 @@
 curl -o- https://raw.githubusercontent.com/mohuwamg/pvm/main/install.sh | bash
 
 # 使用 wget
-wget -qO- https://raw.githubusercontent.com/ymohuwamg/pvm/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/mohuwamg/pvm/main/install.sh | bash
 ```
 
 这将把 `pvm` 仓库克隆到 `~/.pvm`，并将必要的 source 行添加到您的 shell 配置文件（`~/.bashrc`、`~/.zshrc` 或 `~/.profile`）中。
@@ -151,3 +151,16 @@ source ~/.bashrc
 - [快速开始指南](QUICKSTART.md)
 - [详细使用示例](EXAMPLES.md)
 - [项目概述](PROJECT_OVERVIEW.md)
+### 通过 Homebrew 安装
+
+```bash
+brew install --formula https://raw.githubusercontent.com/mohuwamg/pvm/main/Formula/pvm.rb
+```
+
+安装后可直接运行 `pvm --help`，如需在 shell 会话中启用自动补全与持久化，可在配置文件中添加：
+
+```bash
+export PVM_DIR="$HOME/.pvm"
+[ -s "$PVM_DIR/pvm.sh" ] && . "$PVM_DIR/pvm.sh"
+[ -s "$PVM_DIR/bash_completion" ] && . "$PVM_DIR/bash_completion"
+```

@@ -20,6 +20,20 @@ After installation, you will need to restart your shell or run the following com
 
 ```bash
 source ~/.bashrc  # or ~/.zshrc, ~/.profile
+
+### Homebrew
+
+```bash
+brew install --formula https://raw.githubusercontent.com/mohuwamg/pvm/main/Formula/pvm.rb
+```
+
+After installation, run `pvm --help`. To enable shell integration and completion, add:
+
+```bash
+export PVM_DIR="$HOME/.pvm"
+[ -s "$PVM_DIR/pvm.sh" ] && . "$PVM_DIR/pvm.sh"
+[ -s "$PVM_DIR/bash_completion" ] && . "$PVM_DIR/bash_completion"
+```
 ```
 
 ## Getting Started
