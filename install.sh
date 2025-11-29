@@ -28,13 +28,34 @@ pvm_install_dir() {
 
 # Set up installation directory
 INSTALL_DIR="$(pvm_install_dir)"
-if [ "${INSTALL_DIR##*/}" = ".pvmn" ]; then
-  INSTALL_DIR="${INSTALL_DIR%n}"
-fi
+case "${INSTALL_DIR##*/}" in
+  ".pvmn"|"pvmn") INSTALL_DIR="${INSTALL_DIR%n}" ;;
+esac
 mkdir -p "${INSTALL_DIR}"
-cp -f "./pvm.sh" "${INSTALL_DIR}/pvm.sh" 2>/dev/null || true
-if [ -f "./bash_completion" ]; then
-  cp -f "./bash_completion" "${INSTALL_DIR}/bash_completion"
+
+# Resolve source directory of this script to copy files correctly
+SRC_DIR="$(pvm_source_local)"
+case "${SRC_DIR##*/}" in
+  "pvmn") SRC_DIR="${SRC_DIR%n}" ;;
+esac
+if [ ! -f "${SRC_DIR}/pvm.sh" ]; then
+  SRC_DIR="$(pwd)"
+fi
+
+# Copy core scripts from source directory (not current working directory)
+if ! cp -f "${SRC_DIR}/pvm.sh" "${INSTALL_DIR}/pvm.sh"; then
+  pvm_echo >&2 "pvm: failed to copy ${SRC_DIR}/pvm.sh to ${INSTALL_DIR}"
+  exit 1
+fi
+if [ -f "${SRC_DIR}/bash_completion" ]; then
+  cp -f "${SRC_DIR}/bash_completion" "${INSTALL_DIR}/bash_completion"
+fi
+
+# Verify installation
+if [ ! -s "${INSTALL_DIR}/pvm.sh" ]; then
+  pvm_echo >&2 "pvm: failed to install core script to ${INSTALL_DIR}"
+  pvm_echo >&2 "pvm: ensure write permissions and re-run the installer"
+  exit 1
 fi
 
 # Set up shell profile
