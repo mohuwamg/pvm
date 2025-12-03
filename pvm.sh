@@ -428,6 +428,48 @@ pvm_unalias() {
   pvm_echo "Alias '${ALIAS_NAME}' has been removed."
 }
 
+pvm_global() {
+  local ARG
+  ARG="${1}"
+
+  local ALIAS_PATH
+  ALIAS_PATH="$(pvm_alias_path)"
+  mkdir -p "${ALIAS_PATH}"
+
+  if [ -z "${ARG}" ]; then
+    if [ -f "${ALIAS_PATH}/default" ]; then
+      pvm_echo "$(cat "${ALIAS_PATH}/default")"
+      return 0
+    fi
+    pvm_err "No global version set. Use 'pvm global <version>'."
+    return 1
+  fi
+
+  if [ "${ARG}" = "--unset" ] || [ "${ARG}" = "unset" ]; then
+    rm -f "${ALIAS_PATH}/default"
+    pvm_echo "Global CocoaPods version unset."
+    return 0
+  fi
+
+  local RESOLVED
+  # Support 'latest' keyword
+  if [ "${ARG}" = "latest" ]; then
+    RESOLVED="$(pvm_version_remote "${ARG}")"
+  else
+    RESOLVED="$(pvm_version "${ARG}")"
+  fi
+
+  pvm_echo "${RESOLVED}" > "${ALIAS_PATH}/default"
+  pvm_echo "Global CocoaPods version set to ${RESOLVED}"
+
+  # Try to apply to current session if installed
+  if pvm_ensure_version_installed "${RESOLVED}"; then
+    pvm_use "${RESOLVED}"
+  else
+    pvm_err "Version ${RESOLVED} is not installed. Run 'pvm install ${RESOLVED}'."
+  fi
+}
+
 pvm_which() {
   local VERSION
   VERSION="${1}"
@@ -477,6 +519,7 @@ pvm() {
       pvm_echo "  pvm ls-remote               List available versions"
       pvm_echo "  pvm uninstall <version>     Uninstall a specific version"
       pvm_echo "  pvm current                 Display currently active version"
+      pvm_echo "  pvm global [version]        Set or show global CocoaPods version"
       pvm_echo "  pvm alias <name> <version>  Set an alias for a version"
       pvm_echo "  pvm unalias <name>          Remove an alias"
       pvm_echo "  pvm which [version]         Display path to pod binary"
@@ -488,6 +531,8 @@ pvm() {
       pvm_echo "  pvm use 1.12.0              Switch to CocoaPods 1.12.0"
       pvm_echo "  pvm alias stable 1.12.0     Create alias 'stable' for 1.12.0"
       pvm_echo "  pvm use stable              Use the 'stable' alias"
+      pvm_echo "  pvm global 1.16.2           Set 1.16.2 as global default"
+      pvm_echo "  pvm global --unset          Unset global default"
       pvm_echo ""
       pvm_echo "Environment Variables:"
       pvm_echo "  PVM_DIR                     pvm installation directory (default: ~/.pvm)"
@@ -498,6 +543,9 @@ pvm() {
       ;;
     "use")
       pvm_use "$@"
+      ;;
+    "global")
+      pvm_global "$@"
       ;;
     "ls")
       pvm_ls
@@ -536,6 +584,16 @@ fi
 # Create necessary directories
 mkdir -p "${PVM_DIR}/versions/cocoapods"
 mkdir -p "${PVM_DIR}/alias"
+
+# Auto-use global default if set
+DEFAULT_FILE="${PVM_DIR}/alias/default"
+if [ -z "${PVM_COCOAPODS_VERSION-}" ] && [ -f "${DEFAULT_FILE}" ]; then
+  DEFAULT_VERSION="$(cat "${DEFAULT_FILE}")"
+  if pvm_ensure_version_installed "${DEFAULT_VERSION}"; then
+    # Hide output on shell load
+    pvm_use "${DEFAULT_VERSION}" >/dev/null 2>&1 || true
+  fi
+fi
 
 pvm_echo "pvm (Pod Version Manager) loaded"
 
