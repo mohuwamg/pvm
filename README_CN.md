@@ -64,6 +64,7 @@ pod --version
 | `pvm alias <name> <version>` | 为特定版本创建别名。 |
 | `pvm unalias <name>` | 删除别名。 |
 | `pvm which [version]` | 显示指定版本的 `pod` 二进制文件路径。 |
+| `pvm unload` | 卸载 pvm 环境并使用系统 CocoaPods。 |
 | `pvm --help` | 显示帮助信息。 |
 
 ## `.pvmrc` 文件
@@ -92,6 +93,21 @@ alias cd='cd_with_pvm'
 
 - `PVM_DIR`：`pvm` 的安装目录。默认为 `~/.pvm`。
 - `PVM_RUBY_MIRROR`：用于加速下载的 RubyGems 镜像。例如，`https://gems.ruby-china.com/`。
+
+## 卸载
+要卸载 `pvm`，您可以运行以下命令：
+
+```bash
+curl -o- https://raw.githubusercontent.com/mohuwamg/pvm/main/uninstall.sh | bash
+```
+
+或者，如果您已经克隆了仓库，可以运行：
+
+```bash
+./uninstall.sh
+```
+
+这将删除 `~/.pvm` 目录，并从您的 shell 配置文件中移除 `pvm` 配置。
 
 ## 使用示例
 

@@ -180,6 +180,21 @@ pvm_ls() {
       fi
     fi
   done
+  
+  # Show aliases
+  local ALIAS_PATH
+  ALIAS_PATH="$(pvm_alias_path)"
+  if [ -d "${ALIAS_PATH}" ] && [ -n "$(command ls -A "${ALIAS_PATH}")" ]; then
+    pvm_echo ""
+    pvm_echo "Aliases:"
+    for ALIAS_FILE in "${ALIAS_PATH}"/*; do
+      local ALIAS_NAME
+      ALIAS_NAME="$(basename "${ALIAS_FILE}")"
+      local ALIAS_TARGET
+      ALIAS_TARGET="$(cat "${ALIAS_FILE}")"
+      pvm_echo "  ${ALIAS_NAME} -> ${ALIAS_TARGET}"
+    done
+  fi
 }
 
 pvm_install() {
@@ -210,6 +225,10 @@ pvm_install() {
   
   if [ -d "${VERSION_PATH}" ]; then
     pvm_err "Version ${RESOLVED_VERSION} is already installed."
+    # Even if installed, check default alias
+    if [ ! -f "$(pvm_alias_path)/default" ]; then
+      pvm_alias default "${RESOLVED_VERSION}"
+    fi
     return 0
   fi
   
@@ -243,6 +262,11 @@ pvm_install() {
       unset GEM_PATH
     fi
     
+    # Set default alias if it doesn't exist
+    if [ ! -f "$(pvm_alias_path)/default" ]; then
+      pvm_alias default "${RESOLVED_VERSION}"
+    fi
+    
     return 0
   else
     pvm_err "Failed to install CocoaPods ${RESOLVED_VERSION}"
@@ -262,6 +286,24 @@ pvm_install() {
   fi
 }
 
+pvm_strip_path() {
+  local OLD_PATH="${1}"
+  local TO_STRIP="${2}"
+  
+  local NEW_PATH=""
+  local IFS=':'
+  for p in ${OLD_PATH}; do
+    if [ "${p}" != "${TO_STRIP}" ] && [[ "${p}" != *".pvm/versions/cocoapods"* ]]; then
+      if [ -z "${NEW_PATH}" ]; then
+        NEW_PATH="${p}"
+      else
+        NEW_PATH="${NEW_PATH}:${p}"
+      fi
+    fi
+  done
+  echo "${NEW_PATH}"
+}
+
 pvm_use() {
   local VERSION
   VERSION="${1}"
@@ -277,6 +319,11 @@ pvm_use() {
     pvm_err "Usage: pvm use <version>"
     pvm_err "Or create a .pvmrc file in the current directory"
     return 1
+  fi
+  
+  if [ "${VERSION}" = "system" ]; then
+    pvm_unload
+    return 0
   fi
   
   # Resolve version
@@ -297,28 +344,17 @@ pvm_use() {
   export PVM_COCOAPODS_VERSION="${RESOLVED_VERSION}"
   
   # Update PATH
-  # Remove any existing pvm paths from PATH
-  local NEW_PATH
-  NEW_PATH="${PATH}"
+  # First remove any existing pvm paths
+  local CLEAN_PATH
+  CLEAN_PATH="$(pvm_strip_path "${PATH}")"
   
-  # Remove pvm paths using a more robust method
-  local TEMP_PATH=""
-  local IFS=':'
-  for p in ${NEW_PATH}; do
-    case "${p}" in
-      */.pvm/versions/cocoapods/*/bin) ;;
-      *) TEMP_PATH="${TEMP_PATH}:${p}" ;;
-    esac
-  done
-  NEW_PATH="${TEMP_PATH#:}"
-  
-  # If NEW_PATH is empty, set default system paths
-  if [ -z "${NEW_PATH}" ]; then
-    NEW_PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  # If CLEAN_PATH is empty (unlikely but possible), set default system paths
+  if [ -z "${CLEAN_PATH}" ]; then
+    CLEAN_PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
   fi
   
   # Add new version to PATH
-  export PATH="${VERSION_PATH}/bin:${NEW_PATH}"
+  export PATH="${VERSION_PATH}/bin:${CLEAN_PATH}"
   
   pvm_echo "Now using CocoaPods ${RESOLVED_VERSION}"
   
@@ -330,6 +366,22 @@ pvm_use() {
       pvm_err "Warning: pod --version reports ${POD_VERSION}, expected ${RESOLVED_VERSION}"
     fi
   fi
+}
+
+pvm_unload() {
+  unset GEM_HOME
+  unset GEM_PATH
+  unset PVM_COCOAPODS_VERSION
+  
+  local CLEAN_PATH
+  CLEAN_PATH="$(pvm_strip_path "${PATH}")"
+  
+  if [ -z "${CLEAN_PATH}" ]; then
+    CLEAN_PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  fi
+  
+  export PATH="${CLEAN_PATH}"
+  pvm_echo "pvm unloaded. Using system CocoaPods (if available)."
 }
 
 pvm_uninstall() {
@@ -515,6 +567,7 @@ pvm() {
       pvm_echo "Usage:"
       pvm_echo "  pvm install <version>       Install a specific version of CocoaPods"
       pvm_echo "  pvm use <version>           Use a specific version of CocoaPods"
+      pvm_echo "  pvm use system              Use system-wide CocoaPods"
       pvm_echo "  pvm ls                      List installed versions"
       pvm_echo "  pvm ls-remote               List available versions"
       pvm_echo "  pvm uninstall <version>     Uninstall a specific version"
@@ -523,6 +576,7 @@ pvm() {
       pvm_echo "  pvm alias <name> <version>  Set an alias for a version"
       pvm_echo "  pvm unalias <name>          Remove an alias"
       pvm_echo "  pvm which [version]         Display path to pod binary"
+      pvm_echo "  pvm unload                  Unload pvm and use system pod"
       pvm_echo "  pvm --help                  Show this help message"
       pvm_echo ""
       pvm_echo "Examples:"
@@ -568,6 +622,9 @@ pvm() {
     "which")
       pvm_which "$@"
       ;;
+    "unload" | "system")
+      pvm_unload
+      ;;
     *)
       pvm_err "Unknown command: ${COMMAND}"
       pvm_err "Run 'pvm --help' for usage information."
@@ -589,8 +646,12 @@ mkdir -p "${PVM_DIR}/alias"
 DEFAULT_FILE="${PVM_DIR}/alias/default"
 if [ -z "${PVM_COCOAPODS_VERSION-}" ] && [ -f "${DEFAULT_FILE}" ]; then
   DEFAULT_VERSION="$(cat "${DEFAULT_FILE}")"
-  if pvm_ensure_version_installed "${DEFAULT_VERSION}"; then
-    # Hide output on shell load
+  # Try to install default version if missing? No, that might be too aggressive on shell load.
+  # Just try to use it if installed.
+  
+  # We manually check directory existence to avoid printing errors during shell init
+  DEFAULT_VERSION_PATH="${PVM_DIR}/versions/cocoapods/${DEFAULT_VERSION}"
+  if [ -d "${DEFAULT_VERSION_PATH}" ]; then
     pvm_use "${DEFAULT_VERSION}" >/dev/null 2>&1 || true
   fi
 fi

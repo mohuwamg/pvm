@@ -1,0 +1,37 @@
+name: Update Homebrew Formula
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get Release Info
+        id: release_info
+        run: |
+          echo "tag_name=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          echo "tarball_url=${{ github.event.release.tarball_url }}" >> $GITHUB_OUTPUT
+
+      - name: Calculate SHA256
+        id: shasum
+        run: |
+          curl -L -o release.tar.gz ${{ steps.release_info.outputs.tarball_url }}
+          echo "sha256=$(sha256sum release.tar.gz | awk '{print $1}')" >> $GITHUB_OUTPUT
+
+      - name: Update Formula
+        run: |
+          sed -i "s|url \".*\"|url \"${{ steps.release_info.outputs.tarball_url }}\"|g" Formula/pvm.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${{ steps.shasum.outputs.sha256 }}\"|g" Formula/pvm.rb
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/pvm.rb
+          git commit -m "chore: update homebrew formula to ${{ steps.release_info.outputs.tag_name }}"
+          git push

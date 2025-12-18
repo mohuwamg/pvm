@@ -78,6 +78,7 @@ pod --version
 | `pvm alias <name> <version>` | Create an alias for a specific version. |
 | `pvm unalias <name>` | Remove an alias. |
 | `pvm which [version]` | Display the path to the `pod` binary for a specific version. |
+| `pvm unload` | Unload pvm and use system CocoaPods. |
 | `pvm --help` | Show the help message. |
 
 ## `.pvmrc` File
@@ -106,6 +107,21 @@ alias cd='cd_with_pvm'
 
 - `PVM_DIR`: The directory where `pvm` is installed. Defaults to `~/.pvm`.
 - `PVM_RUBY_MIRROR`: The RubyGems mirror to use for faster downloads. For example, `https://gems.ruby-china.com/`.
+
+## Uninstalling
+To uninstall `pvm`, you can run the following command:
+
+```bash
+curl -o- https://raw.githubusercontent.com/mohuwamg/pvm/main/uninstall.sh | bash
+```
+
+Or, if you have the repository cloned locally, you can run:
+
+```bash
+./uninstall.sh
+```
+
+This will remove the `~/.pvm` directory and remove the `pvm` configuration from your shell profile.
 
 ## Contributing
 
